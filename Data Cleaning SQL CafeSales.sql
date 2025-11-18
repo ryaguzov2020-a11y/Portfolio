@@ -240,7 +240,7 @@ FROM CafeSales;
 SELECT DATENAME(MONTH, Transaction_Date)
 FROM CafeSales;
 
---добавляем новый столбец с названием месяца
+--Добавляем новый столбец с названием месяца
 ALTER TABLE CafeSales ADD Transaction_Month NVARCHAR(50) NULL;
 
 --Заполняем столбец данными
@@ -249,15 +249,15 @@ SET Transaction_Month = DATENAME(MONTH, Transaction_Date);
 
 --5.2 День недели транзакции
 
---выделяем из даты день недели
+--Выделяем из даты день недели
 SELECT *, DATENAME(WEEKDAY, Transaction_Date), DATEPART(WEEKDAY, Transaction_Date) --где 1 - понедельник
 FROM CafeSales;
 
---добавляем новые столбцы
+--Добавляем новые столбцы
 ALTER TABLE CafeSales ADD WeekdayName NVARCHAR(50) NULL;
 ALTER TABLE CafeSales ADD WeekdayNumber INT NULL;
 
---Заполняем столбец данными
+--Заполняем столбцы данными
 UPDATE CafeSales
 SET WeekdayName = DATENAME(WEEKDAY, Transaction_Date),
 	WeekdayNumber = DATEPART(WEEKDAY, Transaction_Date);
