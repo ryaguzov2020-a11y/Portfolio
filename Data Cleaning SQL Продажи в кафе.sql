@@ -102,7 +102,7 @@ SET Price_Per_Unit = CASE WHEN Price_Per_Unit IN ('UNKNOWN', 'ERROR') THEN NULL
 SELECT *
 FROM CafeSales;
 
---Этап 3. Корректировка форматов даты
+--Этап 3. Корректировка форматов данных
 
 --Типы данных столбцов
 SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH
