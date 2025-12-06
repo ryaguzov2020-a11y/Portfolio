@@ -179,18 +179,26 @@ SET Month = DATENAME(MONTH, Date),
 	Hour = DATENAME(HOUR, Time);
 
 
---Этап 5.
+--Этап 5. Лист Revenue
+
+-- Общее количество поездок
+SELECT COUNT(Booking_ID)
+FROM UberRides;
 
 -- Общая сумма выручки
 SELECT SUM(Booking_Value)
 FROM UberRides;
 
--- Количество поездок
-SELECT COUNT(Booking_ID)
-FROM UberRides;
-
 --Средняя стоимость поездки
 SELECT AVG(Booking_Value)
+FROM UberRides;
+
+--Среднее расстояние поездки
+SELECT AVG(Ride_Distance)
+FROM UberRides;
+
+--Средняя длительность поездки
+SELECT AVG(Avg_CTAT)
 FROM UberRides;
 
 --Динамика выручки по месяцам
@@ -211,18 +219,15 @@ FROM UberRides
 GROUP BY Payment_Method
 ORDER BY 2 DESC;
 
---Метрики в разрезе типа транспортного средства
-SELECT Vehicle_Type, 
-	   SUM(Booking_Value) AS Total_Value, 
-	   COUNT(Booking_ID) AS Count_of_Bookings, 
-	   ROUND(AVG(Avg_VTAT),2) AS Avg_VTAT, 
-	   ROUND(AVG(Avg_CTAT),2) AS Avg_CTAT, 
-	   SUM(Ride_Distance) AS Total_Ride_Distance, 
-	   ROUND(AVG(Ride_Distance),2) AS Avg_Ride_Distance
+--Выручка по типу транспортного средства
+SELECT Vehicle_Type, SUM(Booking_Value)
 FROM UberRides
-GROUP BY Vehicle_Type;
+GROUP BY Vehicle_Type
+ORDER BY 2 DESC;
 
--- Отмены
+--Этап 6. Лист Cancelling
+
+-- Количество поездок в разрезе статуса поездки
 CREATE OR ALTER VIEW BookingStatusVIEW AS 
 	WITH BookingStatusInfo AS 
 		(SELECT Booking_Status, COUNT(Booking_ID) AS Count_of_Bookings
@@ -244,6 +249,12 @@ SELECT SUM(Count_of_Bookings) AS Cancelling_Count,
 	   SUM(Booking_Percentage) AS Cancelling_Persentage
 FROM BookingStatusVIEW
 WHERE Booking_Status LIKE 'Cancelled%';
+
+--Динамика поездок по статусу поездки
+SELECT Booking_Status, Month, MonthNumber, COUNT(Booking_ID)
+FROM UberRides
+GROUP BY Booking_Status, Month, MonthNumber
+ORDER BY Booking_Status ASC,MonthNumber ASC;
 
 --причины отмены поездки клиентом
 WITH CancellingByCustomerInfo AS
@@ -293,38 +304,74 @@ FROM
 FROM IncompleteRidesReasonInfo) AS t1
 ORDER BY Reason_Percentage DESC;
 
-SELECT *
-FROM UberRides;
+--Этап 7. Лист Vehicle
 
---Количество поездок всего и количество оцененных поездок 
-SELECT COUNT(Booking_ID), COUNT(Driver_Ratings), COUNT(Customer_Rating)
-FROM UberRides;
-
---Рейтинг по типу транспортного средства
-SELECT Vehicle_Type, COUNT(Vehicle_Type) AS Count_Of_Bookings, 
-	   ROUND(AVG(Driver_Ratings), 3) AS Avg_Driver_Ratings, 
-	   ROUND(AVG(Customer_Rating), 3) AS Avg_Customer_Rating
+--Метрики в разрезе типа транспортного средства
+SELECT Vehicle_Type, 
+	   AVG(Booking_Value) AS AVG_Value,
+	   ROUND(AVG(Driver_Ratings),3) AS Avg_Driver_Ratings,
+	   ROUND(AVG(Customer_Rating),3) AS Avg_Customer_Rating,
+	   ROUND(AVG(Avg_CTAT),2) AS Avg_CTAT,
+	   ROUND(AVG(Avg_VTAT),2) AS Avg_VTAT,
+	   ROUND(AVG(Ride_Distance),2) AS Avg_Ride_Distance
 FROM UberRides
-WHERE Driver_Ratings IS NOT NULL AND Customer_Rating IS NOT NULL
+GROUP BY Vehicle_Type;
+
+--Количество поездок по типу транспортного средства
+SELECT Vehicle_Type, COUNT(Booking_ID)
+FROM UberRides
 GROUP BY Vehicle_Type
-ORDER BY Avg_Driver_Ratings DESC;
+ORDER BY 2 DESC;
 
---Локации
-
-SELECT Pickup_Location, Vehicle_Type, COUNT(Booking_ID) AS Booking_Count
+--Топ мест посадки
+SELECT Pickup_Location, COUNT(Booking_ID) AS Booking_Count
 FROM UberRides
-GROUP BY Pickup_Location, Vehicle_Type
-ORDER BY Vehicle_Type, Booking_Count DESC;
+GROUP BY Pickup_Location
+ORDER BY Booking_Count DESC;
 
-select *
-from UberRides;
-
+--Топ мест высадки
 SELECT Drop_Location, COUNT(Booking_ID) AS Booking_Count
 FROM UberRides
 GROUP BY Drop_Location
 ORDER BY Booking_Count DESC;
 
+--Популярные маршруты
+ALTER TABLE UberRides 
+ADD Route Nvarchar(50);
 
-SELECT *
-FROM UberRides;
+UPDATE UberRides
+SET Route = CONCAT(Pickup_Location, '/', Drop_Location);
+
+SELECT Route, COUNT(Booking_ID)
+FROM UberRides
+GROUP BY Route
+ORDER BY 2 DESC;
+
+--Этап 8. Лист Time Analytics
+
+--Количество поездок по времени суток
+SELECT Hour, COUNT(Booking_ID)
+FROM UberRides
+GROUP BY Hour
+ORDER BY 1 ASC;
+
+--Количество поездок по дням недели
+SELECT Weekday, WeekdayNumber, 
+	   COUNT(Booking_ID) as count_bookings, 
+	   AVG(Booking_Value) as avg_value
+FROM UberRides
+GROUP BY Weekday, WeekdayNumber
+ORDER BY WeekdayNumber ASC;
+
+--Средняя продолжительность поездки по времени суток
+SELECT Hour, ROUND(AVG(Avg_CTAT),2)
+FROM UberRides
+GROUP BY Hour
+ORDER BY Hour ASC;
+
+--Среднее время прибытия водителя по времени суток
+SELECT Hour, ROUND(AVG(Avg_VTAT),2)
+FROM UberRides
+GROUP BY Hour
+ORDER BY Hour ASC;
 
